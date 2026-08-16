@@ -65,15 +65,23 @@ class Example(Frame):
         Label(self.frame, text="Lenght [m]").grid(row=3, column=0, padx=10, pady=10)
         Label(self.frame, text="Name").grid(row=4, column=0, padx=10, pady=10)
         Label(self.frame, text="Diameter [m]").grid(row=5, column=0, padx=10, pady=10)
-        Label(self.frame, text="kh_z=0 [kN/M]").grid(row=6, column=0, padx=10, pady=10)
+        Label(self.frame, text="kh_z=0 [kN/m^3]").grid(row=6, column=0, padx=10, pady=10)
         Label(self.frame, text="Fixed Head").grid(row=7, column=0, padx=10, pady=10)
+        Label(self.frame, text="PinnedHead").grid(row=8, column=0, padx=10, pady=10)
         self.FixedHeadEV = BooleanVar()
+        self.PinnedHeadEV = BooleanVar()
         Checkbutton(
             self.frame,
             variable=self.FixedHeadEV,
             onvalue=True,
             offvalue=False
         ).grid(row=7, column=1, padx=10, pady=10)
+        Checkbutton(
+            self.frame,
+            variable=self.PinnedHeadEV,
+            onvalue=True,
+            offvalue=False
+        ).grid(row=8, column=1, padx=10, pady=10)
 
         # Variables
         self.LoadEV = StringVar(value="100")
@@ -124,7 +132,7 @@ class Example(Frame):
             self.D=float(self.DEV.get())
             self.kh=float(self.KHEV.get())
             self.fixed_head = self.FixedHeadEV.get()
-
+            self.pinned_head = self.PinnedHeadEV.get()
         except ValueError:
             print("Please enter valid numeric values.")
             return
@@ -154,8 +162,19 @@ class Example(Frame):
         if self.fixed_head is True:
             M0 = (self.Load / (2 * Beta)) * (data_import[corrector][3][0] / data_import[corrector][7][0])
 
-        #sum applied moment with fixed head condition
+        H0 = 0
         Msum = self.M + M0
+        print("Msum", Msum)
+        if self.pinned_head is True:
+            H0 = - (Msum * Beta) * (data_import[corrector][6][0] / data_import[corrector][2][0])
+            print("PINNED HEAD",H0)
+            print("krhom",data_import[corrector][6][0] )
+            print("krho h", data_import[corrector][2][0])
+
+        #sum applied moment with fixed headDPU 6760 condition
+
+        self.Load += H0
+        print("Load",self.Load)
 
         #compute value
         for i in range(17):
@@ -221,8 +240,8 @@ class Example(Frame):
 
         # Displacement
         plt.subplot(1, 4, 1)
-        plt.xlabel("Displacement")
-        plt.ylabel("Length")
+        plt.xlabel("Displacement (m)")
+        plt.ylabel("Length (m)")
         plt.title("Displacement")
         plt.plot(self.Ytot, self.z)
         plt.ylim(max(self.z), min(self.z))
@@ -230,8 +249,8 @@ class Example(Frame):
 
         # Slope
         plt.subplot(1, 4, 2)
-        plt.xlabel("Slope")
-        plt.ylabel("Length")
+        plt.xlabel("Slope %")
+        plt.ylabel("Length (m)")
         plt.title("Slope")
         plt.plot(self.Ttot, self.z)
         plt.ylim(max(self.z), min(self.z))
@@ -239,8 +258,8 @@ class Example(Frame):
 
         # Moment
         plt.subplot(1, 4, 3)
-        plt.xlabel("Moment")
-        plt.ylabel("Length")
+        plt.xlabel("Moment (kN*m)")
+        plt.ylabel("Length (m)")
         plt.title("Moment")
         plt.plot(self.Mtot, self.z)
         plt.ylim(max(self.z), min(self.z))
@@ -248,8 +267,8 @@ class Example(Frame):
 
         # Soil Reaction
         plt.subplot(1, 4, 4)
-        plt.xlabel("Shear")
-        plt.ylabel("Length")
+        plt.xlabel("Shear (kN)")
+        plt.ylabel("Length (m)")
         plt.title("Shear")
         plt.plot(self.Stot, self.z)
         plt.ylim(max(self.z), min(self.z))
@@ -268,28 +287,28 @@ class Example(Frame):
         self.tv['columns'] = (
             'SR.NO',
             'Lenght',
-            'Displacement',
+            'Displacement (m)',
             'Slope',
-            'Moment',
-            'Shear'
+            'Moment (kN*m)',
+            'Shear (kN)'
         )
 
         self.tv.column('#0', width=0, stretch=NO)
 
         self.tv.column('SR.NO', anchor=CENTER, width=70)
         self.tv.column('Lenght', anchor=CENTER, width=100)
-        self.tv.column('Displacement', anchor=CENTER, width=100)
+        self.tv.column('Displacement (m)', anchor=CENTER, width=100)
         self.tv.column('Slope', anchor=CENTER, width=100)
-        self.tv.column('Moment', anchor=CENTER, width=100)
-        self.tv.column('Shear', anchor=CENTER, width=120)
+        self.tv.column('Moment (kN*m)', anchor=CENTER, width=100)
+        self.tv.column('Shear (kN)', anchor=CENTER, width=120)
 
         self.tv.heading('#0', text='', anchor=CENTER)
         self.tv.heading('SR.NO', text='SR.NO', anchor=CENTER)
         self.tv.heading('Lenght', text='Lenght', anchor=CENTER)
-        self.tv.heading('Displacement', text='Displacement', anchor=CENTER)
+        self.tv.heading('Displacement (m)', text='Displacement (m)', anchor=CENTER)
         self.tv.heading('Slope', text='Slope', anchor=CENTER)
-        self.tv.heading('Moment', text='Moment', anchor=CENTER)
-        self.tv.heading('Shear', text='Shear', anchor=CENTER)
+        self.tv.heading('Moment (kN*m)', text='Moment (kN*m)', anchor=CENTER)
+        self.tv.heading('Shear (kN)', text='Shear (kN)', anchor=CENTER)
 
         scrollbar = Scrollbar(
             self.newwin,
